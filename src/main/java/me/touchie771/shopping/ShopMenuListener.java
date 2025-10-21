@@ -2,7 +2,6 @@ package me.touchie771.shopping;
 
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
-import net.kyori.adventure.text.format.TextDecoration;
 import net.milkbowl.vault.economy.Economy;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
@@ -20,8 +19,9 @@ public record ShopMenuListener(Shopping plugin) implements Listener {
         }
 
         Component title = event.getView().title();
-        boolean isShopMenu = title.equals(Component.text("Shop Menu", NamedTextColor.LIGHT_PURPLE, TextDecoration.BOLD));
-        boolean isRemovalMenu = title.equals(Component.text("Your Shop Items", NamedTextColor.RED, TextDecoration.BOLD));
+        String plainTitle = net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer.plainText().serialize(title);
+        boolean isShopMenu = plainTitle.startsWith("Shop Menu");
+        boolean isRemovalMenu = plainTitle.startsWith("Your Shop Items");
 
         if (!isShopMenu && !isRemovalMenu) {
             return;
@@ -34,18 +34,41 @@ public record ShopMenuListener(Shopping plugin) implements Listener {
         }
 
         ItemStack clickedItem = event.getCurrentItem();
-        if (clickedItem == null || clickedItem.getType() == Material.GRAY_STAINED_GLASS_PANE) {
+        if (clickedItem == null || clickedItem.getType() == Material.GRAY_STAINED_GLASS_PANE || clickedItem.getType() == Material.BARRIER) {
             return;
         }
 
         int slot = event.getSlot();
+        int currentPage = ShopHandler.getPageFromTitle(title);
 
-        if (isRemovalMenu) {
-            handleRemovalMenuClick(player, slot, clickedItem);
+        if (slot == 36) {
+            if (clickedItem.getType() == Material.ARROW) {
+                if (isShopMenu) {
+                    player.openInventory(ShopHandler.constructMenu(currentPage - 1));
+                } else {
+                    player.openInventory(ShopHandler.constructRemovalMenu(player.getUniqueId(), currentPage - 1));
+                }
+            }
             return;
         }
 
-        ShopItem shopItem = getShopItemAtSlot(slot);
+        if (slot == 44) {
+            if (clickedItem.getType() == Material.ARROW) {
+                if (isShopMenu) {
+                    player.openInventory(ShopHandler.constructMenu(currentPage + 1));
+                } else {
+                    player.openInventory(ShopHandler.constructRemovalMenu(player.getUniqueId(), currentPage + 1));
+                }
+            }
+            return;
+        }
+
+        if (isRemovalMenu) {
+            handleRemovalMenuClick(player, slot, clickedItem, currentPage);
+            return;
+        }
+
+        ShopItem shopItem = ShopHandler.getShopItemAtSlot(slot, currentPage);
 
         if (shopItem == null) {
             return;
@@ -79,15 +102,15 @@ public record ShopMenuListener(Shopping plugin) implements Listener {
 
         ShopHandler.removeItem(shopItem);
         plugin.getDataManager().saveItems();
-        player.openInventory(ShopHandler.constructMenu());
+        player.openInventory(ShopHandler.constructMenu(currentPage));
 
         player.sendMessage(Component.text("Successfully purchased ", NamedTextColor.GREEN)
                 .append(clickedItem.displayName())
                 .append(Component.text(" for $" + shopItem.price(), NamedTextColor.GREEN)));
     }
 
-    private void handleRemovalMenuClick(Player player, int slot, ItemStack clickedItem) {
-        ShopItem shopItem = ShopHandler.getPlayerItemAtSlot(player.getUniqueId(), slot);
+    private void handleRemovalMenuClick(Player player, int slot, ItemStack clickedItem, int currentPage) {
+        ShopItem shopItem = ShopHandler.getPlayerItemAtSlot(player.getUniqueId(), slot, currentPage);
 
         if (shopItem == null) {
             return;
@@ -100,17 +123,11 @@ public record ShopMenuListener(Shopping plugin) implements Listener {
 
         ShopHandler.removeItem(shopItem);
         plugin.getDataManager().saveItems();
-        player.openInventory(ShopHandler.constructRemovalMenu(player.getUniqueId()));
+        player.openInventory(ShopHandler.constructRemovalMenu(player.getUniqueId(), currentPage));
 
         player.sendMessage(Component.text("Successfully removed ", NamedTextColor.GREEN)
                 .append(clickedItem.displayName())
                 .append(Component.text(" from the shop", NamedTextColor.GREEN)));
     }
 
-    private ShopItem getShopItemAtSlot(int slot) {
-        if (slot < 0 || slot >= ShopHandler.getItems().size()) {
-            return null;
-        }
-        return ShopHandler.getItems().get(slot);
-    }
 }
