@@ -1,16 +1,28 @@
 package me.touchie771.shopping;
 
+import dev.rollczi.litecommands.LiteCommands;
+import dev.rollczi.litecommands.bukkit.LiteBukkitFactory;
 import net.milkbowl.vault.economy.Economy;
+import org.bukkit.command.CommandSender;
 import org.bukkit.plugin.RegisteredServiceProvider;
 import org.bukkit.plugin.java.JavaPlugin;
 
 public final class Shopping extends JavaPlugin {
 
     private Economy economy;
+    private LiteCommands<CommandSender> liteCommands;
 
     @Override
     public void onEnable() {
         setupEconomy();
+        setupCommands();
+    }
+
+    @Override
+    public void onDisable() {
+        if (liteCommands != null) {
+            liteCommands.unregister();
+        }
     }
 
     private void setupEconomy() {
@@ -21,12 +33,13 @@ public final class Shopping extends JavaPlugin {
             return;
         }
         economy = rsp.getProvider();
-        if (economy == null) {
-            getLogger().severe("Failed to get Vault economy provider!");
-            getServer().getPluginManager().disablePlugin(this);
-            return;
-        }
         getLogger().info("Vault economy hooked successfully!");
+    }
+
+    private void setupCommands() {
+        liteCommands = LiteBukkitFactory.builder()
+                .commands(new ShopCommand())
+                .build();
     }
 
     public Economy getEconomy() {
