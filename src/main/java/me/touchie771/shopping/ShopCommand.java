@@ -36,16 +36,15 @@ public record ShopCommand(Shopping plugin) {
         }
 
         ItemStack itemToSell = heldItem.clone();
-        itemToSell.setAmount(1);
 
         ShopItem shopItem = new ShopItem(itemToSell, price, player.getUniqueId());
         ShopHandler.addItem(shopItem);
         plugin.getDataManager().saveItems();
 
-        heldItem.setAmount(heldItem.getAmount() - 1);
-        player.getInventory().setItemInMainHand(heldItem);
+        player.getInventory().setItemInMainHand(null);
 
         player.sendMessage(Component.text("Successfully listed ", NamedTextColor.GREEN)
+                .append(Component.text(itemToSell.getAmount() + "x ", NamedTextColor.YELLOW))
                 .append(itemToSell.displayName())
                 .append(Component.text(" for $" + price, NamedTextColor.GREEN)));
     }
