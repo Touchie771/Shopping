@@ -6,36 +6,30 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 public final class Shopping extends JavaPlugin {
 
-    private static Economy economy = null;
+    private Economy economy;
 
     @Override
     public void onEnable() {
-        // Plugin startup logic
         setupEconomy();
-    }
-
-    @Override
-    public void onDisable() {
-        // Plugin shutdown logic
     }
 
     private void setupEconomy() {
         RegisteredServiceProvider<Economy> rsp = getServer().getServicesManager().getRegistration(Economy.class);
         if (rsp == null) {
-            getLogger().severe("Disabled due to no Vault dependency found!");
+            getLogger().severe("No Vault economy provider found!");
             getServer().getPluginManager().disablePlugin(this);
             return;
         }
         economy = rsp.getProvider();
         if (economy == null) {
-            getLogger().severe("Disabled due to unable to get Vault dependency!");
+            getLogger().severe("Failed to get Vault economy provider!");
             getServer().getPluginManager().disablePlugin(this);
             return;
         }
-        getLogger().info("Vault economy successfully hooked!");
+        getLogger().info("Vault economy hooked successfully!");
     }
 
-    public static Economy getEconomy() {
+    public Economy getEconomy() {
         return economy;
     }
 }
