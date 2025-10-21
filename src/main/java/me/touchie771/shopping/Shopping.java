@@ -11,17 +11,23 @@ public final class Shopping extends JavaPlugin {
 
     private Economy economy;
     private LiteCommands<CommandSender> liteCommands;
+    private ShopDataManager dataManager;
 
     @Override
     public void onEnable() {
         setupEconomy();
+        setupDataManager();
         setupCommands();
+        setupListeners();
     }
 
     @Override
     public void onDisable() {
         if (liteCommands != null) {
             liteCommands.unregister();
+        }
+        if (dataManager != null) {
+            dataManager.saveItems();
         }
     }
 
@@ -36,13 +42,26 @@ public final class Shopping extends JavaPlugin {
         getLogger().info("Vault economy hooked successfully!");
     }
 
+    private void setupDataManager() {
+        dataManager = new ShopDataManager(this);
+        dataManager.loadItems();
+    }
+
     private void setupCommands() {
         liteCommands = LiteBukkitFactory.builder()
-                .commands(new ShopCommand())
+                .commands(new ShopCommand(this))
                 .build();
+    }
+
+    private void setupListeners() {
+        getServer().getPluginManager().registerEvents(new ShopMenuListener(this), this);
     }
 
     public Economy getEconomy() {
         return economy;
+    }
+
+    public ShopDataManager getDataManager() {
+        return dataManager;
     }
 }
