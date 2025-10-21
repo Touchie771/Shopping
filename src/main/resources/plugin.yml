@@ -1,0 +1,7 @@
+name: Shopping
+version: '1.0.0'
+main: me.touchie771.shopping.Shopping
+api-version: '1.21'
+authors: [ Touchie771 ]
+description: A plugin that allows for shopping systems.
+depend: [ Vault ]
