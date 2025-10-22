@@ -27,12 +27,14 @@ public final class Shopping extends JavaPlugin {
     private LiteCommands<CommandSender> liteCommands;
     private ShopDataManager dataManager;
     private AuctionDataManager auctionDataManager;
+    private SecurityManager securityManager;
     private BukkitTask auctionTask;
     private final Map<UUID, ArrayList<ItemStack>> pendingItems = new HashMap<>();
 
     @Override
     public void onEnable() {
         setupEconomy();
+        setupSecurity();
         setupDataManager();
         setupAuctionSystem();
         setupCommands();
@@ -64,6 +66,10 @@ public final class Shopping extends JavaPlugin {
         }
         economy = rsp.getProvider();
         getLogger().info("Vault economy hooked successfully!");
+    }
+
+    private void setupSecurity() {
+        securityManager = new SecurityManager(this);
     }
 
     private void setupDataManager() {
@@ -104,5 +110,9 @@ public final class Shopping extends JavaPlugin {
 
     public Map<UUID, ArrayList<ItemStack>> getPendingItems() {
         return pendingItems;
+    }
+
+    public SecurityManager getSecurityManager() {
+        return securityManager;
     }
 }

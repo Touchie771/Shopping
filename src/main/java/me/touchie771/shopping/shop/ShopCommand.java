@@ -31,6 +31,11 @@ public record ShopCommand(Shopping plugin) {
             return;
         }
 
+        if (plugin.getSecurityManager().isBlacklisted(heldItem)) {
+            player.sendMessage(plugin.getSecurityManager().getBlacklistMessage());
+            return;
+        }
+
         if (price <= 0) {
             player.sendMessage(Component.text("Price must be greater than 0!", NamedTextColor.RED));
             return;

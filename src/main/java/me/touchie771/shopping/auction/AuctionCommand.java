@@ -34,6 +34,11 @@ public record AuctionCommand(Shopping plugin) {
             return;
         }
 
+        if (plugin.getSecurityManager().isBlacklisted(heldItem)) {
+            player.sendMessage(plugin.getSecurityManager().getBlacklistMessage());
+            return;
+        }
+
         if (startingBid <= 0) {
             player.sendMessage(Component.text("Starting bid must be greater than 0!", NamedTextColor.RED));
             return;
