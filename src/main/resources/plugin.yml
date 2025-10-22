@@ -1,5 +1,5 @@
 name: Shopping
-version: '1.0.1'
+version: '1.0.2'
 main: me.touchie771.shopping.Shopping
 api-version: '1.21'
 authors: [ Touchie771 ]

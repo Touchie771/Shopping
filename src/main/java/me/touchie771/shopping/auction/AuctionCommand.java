@@ -12,6 +12,7 @@ import net.milkbowl.vault.economy.Economy;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 
@@ -49,6 +50,31 @@ public record AuctionCommand(Shopping plugin) {
             return;
         }
 
+        // Check fees
+        double listingFee = plugin.getFeesManager().getListingFee(startingBid);
+        double auctionStartFee = plugin.getFeesManager().getAuctionStartFee();
+        double totalFee = listingFee + auctionStartFee;
+
+        if (totalFee > 0) {
+            Economy economy = plugin.getEconomy();
+            if (economy == null) {
+                player.sendMessage(Component.text("Economy system is not available!", NamedTextColor.RED));
+                return;
+            }
+            
+            double balance = economy.getBalance(player);
+            if (balance < totalFee) {
+                player.sendMessage(Component.text("You don't have enough money for the fees! Need $" +
+                        String.format("%.2f", totalFee) + " but only have $" + String.format("%.2f", balance),
+                        NamedTextColor.RED));
+                return;
+            }
+            economy.withdrawPlayer(player, totalFee);
+
+            Component feeMessage = getFeeMessage(listingFee, auctionStartFee);
+            player.sendMessage(feeMessage);
+        }
+
         ItemStack itemToAuction = heldItem.clone();
         long durationSeconds = durationMinutes * 60L;
 
@@ -63,6 +89,18 @@ public record AuctionCommand(Shopping plugin) {
                 .append(itemToAuction.displayName())
                 .append(Component.text(" with starting bid $" + startingBid, NamedTextColor.GREEN))
                 .append(Component.text(" for " + durationMinutes + " minutes", NamedTextColor.GREEN)));
+    }
+
+    private static @NotNull Component getFeeMessage(double listingFee, double auctionStartFee) {
+        Component feeMessage = Component.text("Fees charged: ", NamedTextColor.YELLOW);
+        if (listingFee > 0) {
+            feeMessage = feeMessage.append(Component.text("listing $" + String.format("%.2f", listingFee), NamedTextColor.YELLOW));
+        }
+        if (auctionStartFee > 0) {
+            if (listingFee > 0) feeMessage = feeMessage.append(Component.text(" + ", NamedTextColor.YELLOW));
+            feeMessage = feeMessage.append(Component.text("auction $" + String.format("%.2f", auctionStartFee), NamedTextColor.YELLOW));
+        }
+        return feeMessage;
     }
 
     @Execute(name = "bid")

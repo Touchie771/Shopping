@@ -86,9 +86,13 @@ public record ShopMenuListener(Shopping plugin) implements Listener {
             return;
         }
 
+        double saleTax = plugin.getFeesManager().getSaleTax(shopItem.price());
+        double totalCost = shopItem.price() + saleTax;
+        double sellerReceives = shopItem.price() - saleTax;
+
         double balance = economy.getBalance(player);
-        if (balance < shopItem.price()) {
-            player.sendMessage(Component.text("You don't have enough money! Need $" + shopItem.price() +
+        if (balance < totalCost) {
+            player.sendMessage(Component.text("You don't have enough money! Need $" + String.format("%.2f", totalCost) +
                     " but only have $" + String.format("%.2f", balance), NamedTextColor.RED));
             return;
         }
@@ -98,16 +102,25 @@ public record ShopMenuListener(Shopping plugin) implements Listener {
             return;
         }
 
-        economy.withdrawPlayer(player, shopItem.price());
-        economy.depositPlayer(plugin.getServer().getOfflinePlayer(shopItem.owner()), shopItem.price());
+        economy.withdrawPlayer(player, totalCost);
+        
+        // Seller gets price minus tax
+        if (sellerReceives > 0) {
+            economy.depositPlayer(plugin.getServer().getOfflinePlayer(shopItem.owner()), sellerReceives);
+        }
 
         ShopHandler.removeItem(shopItem);
         plugin.getDataManager().saveItems();
         player.openInventory(ShopHandler.constructMenu(currentPage));
 
+        Component costMessage = Component.text(" for $" + shopItem.price(), NamedTextColor.GREEN);
+        if (saleTax > 0) {
+            costMessage = costMessage.append(Component.text(" (tax: $" + String.format("%.2f", saleTax) + ")", NamedTextColor.YELLOW));
+        }
+        
         player.sendMessage(Component.text("Successfully purchased ", NamedTextColor.GREEN)
                 .append(clickedItem.displayName())
-                .append(Component.text(" for $" + shopItem.price(), NamedTextColor.GREEN)));
+                .append(costMessage));
     }
 
     private void handleRemovalMenuClick(Player player, int slot, ItemStack clickedItem, int currentPage) {

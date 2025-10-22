@@ -28,6 +28,7 @@ public final class Shopping extends JavaPlugin {
     private ShopDataManager dataManager;
     private AuctionDataManager auctionDataManager;
     private SecurityManager securityManager;
+    private FeesManager feesManager;
     private BukkitTask auctionTask;
     private final Map<UUID, ArrayList<ItemStack>> pendingItems = new HashMap<>();
 
@@ -35,6 +36,7 @@ public final class Shopping extends JavaPlugin {
     public void onEnable() {
         setupEconomy();
         setupSecurity();
+        setupFees();
         setupDataManager();
         setupAuctionSystem();
         setupCommands();
@@ -70,6 +72,11 @@ public final class Shopping extends JavaPlugin {
 
     private void setupSecurity() {
         securityManager = new SecurityManager(this);
+    }
+
+    private void setupFees() {
+        feesManager = new FeesManager(this);
+        feesManager.setupFiles();
     }
 
     private void setupDataManager() {
@@ -114,5 +121,9 @@ public final class Shopping extends JavaPlugin {
 
     public SecurityManager getSecurityManager() {
         return securityManager;
+    }
+
+    public FeesManager getFeesManager() {
+        return feesManager;
     }
 }

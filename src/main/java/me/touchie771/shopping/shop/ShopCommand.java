@@ -8,6 +8,7 @@ import dev.rollczi.litecommands.annotations.permission.Permission;
 import me.touchie771.shopping.Shopping;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
+import net.milkbowl.vault.economy.Economy;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
@@ -39,6 +40,21 @@ public record ShopCommand(Shopping plugin) {
         if (price <= 0) {
             player.sendMessage(Component.text("Price must be greater than 0!", NamedTextColor.RED));
             return;
+        }
+
+        // Check listing fee
+        double listingFee = plugin.getFeesManager().getListingFee(price);
+        if (listingFee > 0) {
+            Economy economy = plugin.getEconomy();
+            double balance = economy.getBalance(player);
+            if (balance < listingFee) {
+                player.sendMessage(Component.text("You don't have enough money for the listing fee! Need $" +
+                        String.format("%.2f", listingFee) + " but only have $" + String.format("%.2f", balance),
+                        NamedTextColor.RED));
+                return;
+            }
+            economy.withdrawPlayer(player, listingFee);
+            player.sendMessage(Component.text("Listing fee: $" + String.format("%.2f", listingFee), NamedTextColor.YELLOW));
         }
 
         ItemStack itemToSell = heldItem.clone();

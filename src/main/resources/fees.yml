@@ -1,0 +1,29 @@
+# Fees and taxes configuration for Shopping plugin
+
+# Enable/disable fees and taxes system
+enabled: true
+
+# Listing fees (charged when creating a shop listing or auction)
+listing:
+  enabled: true
+  # Flat fee amount
+  flat_fee: 5.0
+  # Percentage fee (0.05 = 5%)
+  percentage_fee: 0.05
+  # Maximum percentage fee (to cap high-value items)
+  max_percentage_fee: 100.0
+
+# Sale taxes (charged on completed sales)
+sale_tax:
+  enabled: true
+  # Percentage tax on sale price (0.10 = 10%)
+  percentage: 0.10
+  # Maximum tax amount
+  max_tax: 500.0
+
+# Auction-specific fees
+auction:
+  # Additional fee for starting auctions
+  start_fee: 2.0
+  # Different tax rate for auctions
+  sale_tax_percentage: 0.08

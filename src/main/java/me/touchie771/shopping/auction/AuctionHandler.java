@@ -131,7 +131,14 @@ public record AuctionHandler() {
             OfflinePlayer winner = Bukkit.getOfflinePlayer(auction.getCurrentBidder());
             OfflinePlayer seller = Bukkit.getOfflinePlayer(auction.getSeller());
 
-            plugin.getEconomy().depositPlayer(seller, auction.getCurrentBid());
+            double salePrice = auction.getCurrentBid();
+            double saleTax = plugin.getFeesManager().getAuctionSaleTax(salePrice);
+            double sellerReceives = salePrice - saleTax;
+
+            // Seller gets bid amount minus tax
+            if (sellerReceives > 0) {
+                plugin.getEconomy().depositPlayer(seller, sellerReceives);
+            }
 
             if (winner.isOnline()) {
                 Objects.requireNonNull(winner.getPlayer()).getInventory().addItem(auction.getClonedItem());
@@ -144,9 +151,13 @@ public record AuctionHandler() {
             }
 
             if (seller.isOnline()) {
-                Objects.requireNonNull(seller.getPlayer()).sendMessage(Component.text("Your auction for ", NamedTextColor.GREEN)
+                Component saleMessage = Component.text("Your auction for ", NamedTextColor.GREEN)
                         .append(auction.getItemStack().displayName())
-                        .append(Component.text(" sold for $" + auction.getCurrentBid(), NamedTextColor.GREEN)));
+                        .append(Component.text(" sold for $" + salePrice, NamedTextColor.GREEN));
+                if (saleTax > 0) {
+                    saleMessage = saleMessage.append(Component.text(" (after $" + String.format("%.2f", saleTax) + " tax)", NamedTextColor.YELLOW));
+                }
+                Objects.requireNonNull(seller.getPlayer()).sendMessage(saleMessage);
             }
         } else {
             OfflinePlayer seller = Bukkit.getOfflinePlayer(auction.getSeller());
