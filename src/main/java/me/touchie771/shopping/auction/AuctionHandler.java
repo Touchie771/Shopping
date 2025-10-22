@@ -13,7 +13,7 @@ import org.bukkit.inventory.meta.ItemMeta;
 
 import java.util.*;
 
-public class AuctionHandler {
+public record AuctionHandler() {
 
     private static final List<AuctionItem> activeAuctions = new ArrayList<>();
     private static final int ITEMS_PER_PAGE = 36;
