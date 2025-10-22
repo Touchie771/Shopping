@@ -10,6 +10,8 @@ A Minecraft plugin that provides a player-driven marketplace with both fixed-pri
 - **Automatic Sorting**: Items sorted by price from lowest to highest
 - **Item Management**: Remove your listings anytime
 - **Economy Integration**: Uses Vault for all transactions
+- **Listing Fees**: Configurable fees for creating shop listings
+- **Sale Taxes**: Configurable taxes on completed purchases
 
 ### Auction System
 - **Timed Auctions**: List items with custom duration (1 minute to 24 hours)
@@ -18,6 +20,8 @@ A Minecraft plugin that provides a player-driven marketplace with both fixed-pri
 - **Refund System**: Previous bidders are refunded immediately when outbid
 - **Offline Support**: Winners receive items even when offline
 - **Paginated GUI**: Browse auctions with easy navigation (36 items per page)
+- **Listing Fees**: Configurable fees for starting auctions
+- **Sale Taxes**: Configurable taxes on completed auctions
 
 ## Requirements
 
@@ -71,22 +75,61 @@ shopping.auction.cancel    # Cancel auctions
 shopping.auction.claim     # Claim items
 ```
 
+## Fees and Taxes
+
+The plugin includes a comprehensive fee and tax system to generate server revenue and prevent spam listings.
+
+### Configuration
+
+Fees are configured in `plugins/Shopping/fees.yml`:
+
+```yaml
+# Enable/disable fees and taxes system
+enabled: true
+
+# Listing fees (charged when creating listings)
+listing:
+  enabled: true
+  flat_fee: 5.0          # Flat fee amount
+  percentage_fee: 0.05   # 5% of item price
+  max_percentage_fee: 100.0  # Maximum percentage fee
+
+# Sale taxes (charged on completed sales)
+sale_tax:
+  enabled: true
+  percentage: 0.10       # 10% tax on sale price
+  max_tax: 500.0         # Maximum tax amount
+
+# Auction-specific fees
+auction:
+  start_fee: 2.0         # Additional fee for starting auctions
+  sale_tax_percentage: 0.08  # 8% tax on auction sales
+```
+
+### Fee Examples
+- **Shop Listing**: $100 item = $5 + $5 (5%) = $10 total fee
+- **Shop Purchase**: $100 item + $10 tax = $110 buyer pays, seller gets $90
+- **Auction Start**: Listing fee + $2 auction fee
+- **Auction Sale**: Seller gets winning bid minus tax
+
 ## Usage Examples
 
 ### Selling in Shop
 ```
 1. Hold the item you want to sell
 2. Run: /shop sell 100
-3. Item is listed for $100
-4. When someone buys it, you receive the money
+3. Pay listing fee ($5 + 5% of item price)
+4. Item is listed for $100
+5. When someone buys it, you receive the money minus tax
 ```
 
 ### Starting an Auction
 ```
 1. Hold the item you want to auction
 2. Run: /auction start 50 30
-3. Auction starts at $50 for 30 minutes
-4. Highest bidder wins when time expires
+3. Pay listing fee + auction start fee ($2)
+4. Auction starts at $50 for 30 minutes
+5. Highest bidder wins when time expires (minus tax)
 ```
 
 ### Bidding on Auctions
@@ -103,6 +146,7 @@ The plugin stores data in YAML files:
 - `plugins/Shopping/items.yml` - Shop listings
 - `plugins/Shopping/auctions.yml` - Active auctions
 - `plugins/Shopping/pending_items.yml` - Items waiting to be claimed
+- `plugins/Shopping/fees.yml` - Fee and tax configuration
 
 ## Building from Source
 
