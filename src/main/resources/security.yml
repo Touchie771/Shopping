@@ -1,5 +1,8 @@
 # Security configuration for Shopping plugin
 # Items listed here cannot be sold in shops or auctioned
+#
+# Wildcard patterns: Use "*<suffix>" (quoted!) to block all items ending with that suffix
+# Example: "*_SPAWN_EGG" blocks all spawn eggs (CREEPER_SPAWN_EGG, ZOMBIE_SPAWN_EGG, etc.)
 
 blacklisted_items:
   
@@ -13,16 +16,16 @@ blacklisted_items:
   - JIGSAW
   - BARRIER
   
-  # Spawn eggs (prevent mob griefing)
-  - CREEPER_SPAWN_EGG
-  - WITHER_SKELETON_SPAWN_EGG
-  - ENDER_DRAGON_SPAWN_EGG
-  - WITHER_SPAWN_EGG
-  - GHAST_SPAWN_EGG
-  - BLAZE_SPAWN_EGG
+  # All spawn eggs (using wildcard)
+  - "*_SPAWN_EGG"
   
   # Bedrock
   - BEDROCK
+  
+  # More wildcard examples (must be quoted):
+  # - "*_MINECART"      (blocks all minecart types)
+  # - "*_BUCKET"        (blocks all buckets)
+  # - "*_COMMAND_BLOCK" (blocks all command block types)
   
   # Add more items as needed
   # Use Minecraft material names (uppercase)

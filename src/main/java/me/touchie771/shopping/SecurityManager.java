@@ -17,6 +17,7 @@ public class SecurityManager {
     private final Shopping plugin;
     private FileConfiguration securityConfig;
     private final Set<Material> blacklistedItems = new HashSet<>();
+    private final Set<String> wildcardPatterns = new HashSet<>();
     private Component blacklistMessage;
 
     public SecurityManager(Shopping plugin) {
@@ -35,32 +36,52 @@ public class SecurityManager {
 
     private void loadBlacklist() {
         blacklistedItems.clear();
+        wildcardPatterns.clear();
 
         List<String> items = securityConfig.getStringList("blacklisted_items");
         for (String itemName : items) {
-            try {
-                Material material = Material.valueOf(itemName.toUpperCase());
-                blacklistedItems.add(material);
-            } catch (IllegalArgumentException e) {
-                plugin.getLogger().warning("Invalid material in security.yml: " + itemName);
+            itemName = itemName.trim();
+            
+            if (itemName.startsWith("*")) {
+                String pattern = itemName.substring(1).toUpperCase();
+                wildcardPatterns.add(pattern);
+                plugin.getLogger().info("Loaded wildcard pattern: *" + pattern);
+            } else {
+                try {
+                    Material material = Material.valueOf(itemName.toUpperCase());
+                    blacklistedItems.add(material);
+                } catch (IllegalArgumentException e) {
+                    plugin.getLogger().warning("Invalid material in security.yml: " + itemName);
+                }
             }
         }
 
-        String messageString = securityConfig.getString("blacklist_message", "&cThis item is blacklisted and cannot be sold or auctioned!");
-        blacklistMessage = LegacyComponentSerializer.legacyAmpersand().deserialize(messageString);
+        String messageString = securityConfig.getString("blacklist_message", "§cThis item is blacklisted and cannot be sold or auctioned!");
+        blacklistMessage = LegacyComponentSerializer.legacySection().deserialize(messageString);
 
-        plugin.getLogger().info("Loaded " + blacklistedItems.size() + " blacklisted items from security.yml");
+        plugin.getLogger().info("Loaded " + blacklistedItems.size() + " exact blacklisted items and " + wildcardPatterns.size() + " wildcard patterns");
     }
 
     public boolean isBlacklisted(ItemStack item) {
         if (item == null || item.getType().isAir()) {
             return false;
         }
-        return blacklistedItems.contains(item.getType());
+        
+        if (blacklistedItems.contains(item.getType())) {
+            return true;
+        }
+        
+        String materialName = item.getType().name();
+        for (String pattern : wildcardPatterns) {
+            if (materialName.endsWith(pattern)) {
+                return true;
+            }
+        }
+        
+        return false;
     }
 
     public Component getBlacklistMessage() {
         return blacklistMessage;
     }
-
 }
