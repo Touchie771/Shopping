@@ -5,3 +5,32 @@ api-version: '1.21'
 authors: [ Touchie771 ]
 description: A plugin that allows for shopping systems.
 depend: [ Vault ]
+
+permissions:
+  shopping.menu:
+    description: Access to shop menu
+    default: true
+  shopping.sell:
+    description: Sell items in the shop
+    default: true
+  shopping.remove:
+    description: Remove your items from the shop
+    default: true
+  shopping.auction:
+    description: View auctions
+    default: true
+  shopping.auction.start:
+    description: Start auctions
+    default: true
+  shopping.auction.bid:
+    description: Bid on auctions
+    default: true
+  shopping.auction.list:
+    description: List all active auctions
+    default: true
+  shopping.auction.cancel:
+    description: Cancel your auctions
+    default: true
+  shopping.auction.claim:
+    description: Claim won items
+    default: true
