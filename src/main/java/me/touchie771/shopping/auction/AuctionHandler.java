@@ -1,5 +1,6 @@
-package me.touchie771.shopping;
+package me.touchie771.shopping.auction;
 
+import me.touchie771.shopping.Shopping;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;

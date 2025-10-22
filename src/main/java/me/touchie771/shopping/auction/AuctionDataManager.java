@@ -1,5 +1,6 @@
-package me.touchie771.shopping;
+package me.touchie771.shopping.auction;
 
+import me.touchie771.shopping.Shopping;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;

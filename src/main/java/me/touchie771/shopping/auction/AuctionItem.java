@@ -1,4 +1,4 @@
-package me.touchie771.shopping;
+package me.touchie771.shopping.auction;
 
 import org.bukkit.inventory.ItemStack;
 
