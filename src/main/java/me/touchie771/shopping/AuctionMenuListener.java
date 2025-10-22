@@ -3,13 +3,12 @@ package me.touchie771.shopping;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.milkbowl.vault.economy.Economy;
+import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.inventory.ItemStack;
-
-import java.util.Comparator;
 
 public record AuctionMenuListener(Shopping plugin) implements Listener {
 
@@ -22,7 +21,7 @@ public record AuctionMenuListener(Shopping plugin) implements Listener {
         Component title = event.getView().title();
         String plainTitle = net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer.plainText().serialize(title);
 
-        if (!plainTitle.equals("Active Auctions")) {
+        if (!plainTitle.startsWith("Active Auctions")) {
             return;
         }
 
@@ -33,20 +32,28 @@ public record AuctionMenuListener(Shopping plugin) implements Listener {
         }
 
         ItemStack clickedItem = event.getCurrentItem();
-        if (clickedItem == null) {
+        if (clickedItem == null || clickedItem.getType() == Material.GRAY_STAINED_GLASS_PANE || clickedItem.getType() == Material.BARRIER) {
             return;
         }
 
         int slot = event.getSlot();
-        if (slot < 0 || slot >= AuctionHandler.getActiveAuctions().size()) {
+        int currentPage = AuctionHandler.getPageFromTitle(title);
+
+        if (slot == 36) {
+            if (clickedItem.getType() == Material.ARROW) {
+                player.openInventory(AuctionHandler.constructAuctionMenu(currentPage - 1));
+            }
             return;
         }
 
-        AuctionItem auction = AuctionHandler.getActiveAuctions().stream()
-                .sorted(Comparator.comparingLong(AuctionItem::getTimeRemainingSeconds))
-                .skip(slot)
-                .findFirst()
-                .orElse(null);
+        if (slot == 44) {
+            if (clickedItem.getType() == Material.ARROW) {
+                player.openInventory(AuctionHandler.constructAuctionMenu(currentPage + 1));
+            }
+            return;
+        }
+
+        AuctionItem auction = AuctionHandler.getAuctionAtSlot(slot, currentPage);
 
         if (auction == null || auction.isExpired()) {
             player.sendMessage(Component.text("This auction has expired!", NamedTextColor.RED));
@@ -94,6 +101,6 @@ public record AuctionMenuListener(Shopping plugin) implements Listener {
                 .append(clickedItem.displayName())
                 .append(Component.text("!", NamedTextColor.GREEN)));
 
-        player.openInventory(AuctionHandler.constructAuctionMenu());
+        player.openInventory(AuctionHandler.constructAuctionMenu(currentPage));
     }
 }

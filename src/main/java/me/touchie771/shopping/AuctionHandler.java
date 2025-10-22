@@ -2,7 +2,9 @@ package me.touchie771.shopping;
 
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.Bukkit;
+import org.bukkit.Material;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
@@ -13,6 +15,7 @@ import java.util.*;
 public class AuctionHandler {
 
     private static final List<AuctionItem> activeAuctions = new ArrayList<>();
+    private static final int ITEMS_PER_PAGE = 36;
 
     public static List<AuctionItem> getActiveAuctions() {
         return activeAuctions;
@@ -36,21 +39,37 @@ public class AuctionHandler {
                 .toList();
     }
 
-    public static Inventory constructAuctionMenu() {
-        Inventory auctionMenu = Bukkit.createInventory(null, 54, 
-                Component.text("Active Auctions", NamedTextColor.GOLD));
-
+    public static Inventory constructAuctionMenu(int page) {
         List<AuctionItem> sortedAuctions = activeAuctions.stream()
                 .sorted(Comparator.comparingLong(AuctionItem::getTimeRemainingSeconds))
                 .toList();
 
-        for (int i = 0; i < sortedAuctions.size() && i < 54; i++) {
+        int totalPages = (int) Math.ceil((double) sortedAuctions.size() / ITEMS_PER_PAGE);
+        if (totalPages == 0) totalPages = 1;
+        if (page < 1) page = 1;
+        if (page > totalPages) page = totalPages;
+
+        Inventory auctionMenu = Bukkit.createInventory(null, 45, 
+                Component.text("Active Auctions - Page " + page + "/" + totalPages,
+                        NamedTextColor.GOLD, TextDecoration.BOLD));
+
+        int startIndex = (page - 1) * ITEMS_PER_PAGE;
+        int endIndex = Math.min(startIndex + ITEMS_PER_PAGE, sortedAuctions.size());
+
+        for (int i = startIndex; i < endIndex; i++) {
             AuctionItem auction = sortedAuctions.get(i);
             ItemStack displayItem = createAuctionDisplayItem(auction);
-            auctionMenu.setItem(i, displayItem);
+            auctionMenu.setItem(i - startIndex, displayItem);
         }
 
+        addNavigationButtons(auctionMenu, page, totalPages);
+        addFillerItem(auctionMenu);
+
         return auctionMenu;
+    }
+
+    public static Inventory constructAuctionMenu() {
+        return constructAuctionMenu(1);
     }
 
     public static ItemStack createAuctionDisplayItem(AuctionItem auction) {
@@ -141,5 +160,84 @@ public class AuctionHandler {
         }
 
         removeAuction(auction);
+    }
+
+    public static AuctionItem getAuctionAtSlot(int slot, int page) {
+        List<AuctionItem> sortedAuctions = activeAuctions.stream()
+                .sorted(Comparator.comparingLong(AuctionItem::getTimeRemainingSeconds))
+                .toList();
+
+        int actualIndex = (page - 1) * ITEMS_PER_PAGE + slot;
+        if (actualIndex < 0 || actualIndex >= sortedAuctions.size()) {
+            return null;
+        }
+        return sortedAuctions.get(actualIndex);
+    }
+
+    private static void addNavigationButtons(Inventory inventory, int currentPage, int totalPages) {
+        ItemStack prevButton;
+        if (currentPage > 1) {
+            prevButton = new ItemStack(Material.ARROW, 1);
+            ItemMeta prevMeta = prevButton.getItemMeta();
+            prevMeta.displayName(Component.text("Previous Page", NamedTextColor.YELLOW, TextDecoration.BOLD));
+            prevMeta.lore(List.of(Component.text("Go to page " + (currentPage - 1), NamedTextColor.GRAY)));
+            prevButton.setItemMeta(prevMeta);
+        } else {
+            prevButton = new ItemStack(Material.BARRIER, 1);
+            ItemMeta prevMeta = prevButton.getItemMeta();
+            prevMeta.displayName(Component.text("Previous Page", NamedTextColor.DARK_GRAY, TextDecoration.BOLD));
+            prevMeta.lore(List.of(Component.text("No previous page", NamedTextColor.DARK_GRAY)));
+            prevButton.setItemMeta(prevMeta);
+        }
+        inventory.setItem(36, prevButton);
+
+        ItemStack nextButton;
+        if (currentPage < totalPages) {
+            nextButton = new ItemStack(Material.ARROW, 1);
+            ItemMeta nextMeta = nextButton.getItemMeta();
+            nextMeta.displayName(Component.text("Next Page", NamedTextColor.YELLOW, TextDecoration.BOLD));
+            nextMeta.lore(List.of(Component.text("Go to page " + (currentPage + 1), NamedTextColor.GRAY)));
+            nextButton.setItemMeta(nextMeta);
+        } else {
+            nextButton = new ItemStack(Material.BARRIER, 1);
+            ItemMeta nextMeta = nextButton.getItemMeta();
+            nextMeta.displayName(Component.text("Next Page", NamedTextColor.DARK_GRAY, TextDecoration.BOLD));
+            nextMeta.lore(List.of(Component.text("No next page", NamedTextColor.DARK_GRAY)));
+            nextButton.setItemMeta(nextMeta);
+        }
+        inventory.setItem(44, nextButton);
+    }
+
+    public static int getPageFromTitle(Component title) {
+        String plainTitle = net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer.plainText().serialize(title);
+        if (plainTitle.contains("Page ")) {
+            try {
+                String pageInfo = plainTitle.substring(plainTitle.indexOf("Page ") + 5);
+                String pageNum = pageInfo.split("/")[0].trim();
+                return Integer.parseInt(pageNum);
+            } catch (Exception e) {
+                return 1;
+            }
+        }
+        return 1;
+    }
+
+    private static void addFillerItem(Inventory inventory) {
+        ItemStack fillerItem = new ItemStack(Material.GRAY_STAINED_GLASS_PANE, 1);
+        ItemMeta fillerItemMeta = fillerItem.getItemMeta();
+        fillerItemMeta.displayName(Component.empty());
+        fillerItem.setItemMeta(fillerItemMeta);
+
+        for (int i = 0; i < ITEMS_PER_PAGE; i++) {
+            if (inventory.getItem(i) == null) {
+                inventory.setItem(i, fillerItem);
+            }
+        }
+
+        for (int i = 37; i < 44; i++) {
+            if (inventory.getItem(i) == null) {
+                inventory.setItem(i, fillerItem);
+            }
+        }
     }
 }
