@@ -1,6 +1,6 @@
 plugins {
     id 'java'
-    id 'com.gradleup.shadow' version '8.3.5'
+    id("com.gradleup.shadow") version "9.3.0"
     id("xyz.jpenilla.run-paper") version "2.3.1"
 }
 
@@ -68,14 +68,5 @@ processResources {
 }
 
 jar {
-    enabled = false
-}
-
-shadowJar {
     archiveClassifier.set('')
-    relocate 'dev.rollczi.litecommands', 'me.touchie771.shopping.libs.litecommands'
-}
-
-build {
-    dependsOn shadowJar
 }
