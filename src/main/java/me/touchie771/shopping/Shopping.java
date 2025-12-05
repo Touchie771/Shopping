@@ -1,7 +1,6 @@
 package me.touchie771.shopping;
 
-import dev.rollczi.litecommands.LiteCommands;
-import dev.rollczi.litecommands.bukkit.LiteBukkitFactory;
+import me.touchie771.minecraftCommands.api.CommandRegister;
 import me.touchie771.shopping.auction.AuctionCommand;
 import me.touchie771.shopping.auction.AuctionDataManager;
 import me.touchie771.shopping.auction.AuctionMenuListener;
@@ -10,7 +9,6 @@ import me.touchie771.shopping.shop.ShopCommand;
 import me.touchie771.shopping.shop.ShopDataManager;
 import me.touchie771.shopping.shop.ShopMenuListener;
 import net.milkbowl.vault.economy.Economy;
-import org.bukkit.command.CommandSender;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.RegisteredServiceProvider;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -24,7 +22,6 @@ import java.util.UUID;
 public final class Shopping extends JavaPlugin {
 
     private Economy economy;
-    private LiteCommands<CommandSender> liteCommands;
     private ShopDataManager dataManager;
     private AuctionDataManager auctionDataManager;
     private SecurityManager securityManager;
@@ -45,9 +42,6 @@ public final class Shopping extends JavaPlugin {
 
     @Override
     public void onDisable() {
-        if (liteCommands != null) {
-            liteCommands.unregister();
-        }
         if (dataManager != null) {
             dataManager.saveItems();
         }
@@ -93,9 +87,17 @@ public final class Shopping extends JavaPlugin {
     }
 
     private void setupCommands() {
-        liteCommands = LiteBukkitFactory.builder()
-                .commands(new ShopCommand(this), new AuctionCommand(this))
-                .build();
+        // Set plugin references for static access
+        ShopCommand.setPlugin(this);
+        AuctionCommand.setPlugin(this);
+        
+        // Register commands
+        new CommandRegister.RegisterBuilder()
+                .setPlugin(this)
+                .addCommand(ShopCommand.class)
+                .addCommand(AuctionCommand.class)
+                .build()
+                .register();
     }
 
     private void setupListeners() {

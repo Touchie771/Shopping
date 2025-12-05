@@ -1,10 +1,8 @@
 package me.touchie771.shopping.shop;
 
-import dev.rollczi.litecommands.annotations.argument.Arg;
-import dev.rollczi.litecommands.annotations.command.Command;
-import dev.rollczi.litecommands.annotations.context.Context;
-import dev.rollczi.litecommands.annotations.execute.Execute;
-import dev.rollczi.litecommands.annotations.permission.Permission;
+import me.touchie771.minecraftCommands.api.annotations.Execute;
+import me.touchie771.minecraftCommands.api.annotations.Permission;
+import me.touchie771.minecraftCommands.api.annotations.Command;
 import me.touchie771.shopping.Shopping;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
@@ -13,18 +11,69 @@ import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
-@Command(name = "shop")
+@Command(
+    name = "shop",
+    description = "Open the shop menu",
+    usage = "/shop [sell|remove] [price]"
+)
 @Permission("shopping.menu")
-public record ShopCommand(Shopping plugin) {
+public class ShopCommand {
 
-    @Execute
-    public void execute(@Context Player player) {
-        player.openInventory(ShopHandler.constructMenu());
+    private static Shopping plugin;
+
+    public ShopCommand() {
+        // Default constructor for library instantiation
     }
 
-    @Execute(name = "sell")
-    @Permission("shopping.sell")
-    public void sell(@Context Player player, @Arg int price) {
+    public static void setPlugin(Shopping pluginInstance) {
+        plugin = pluginInstance;
+    }
+
+    @Execute
+    public void execute(Player player, String[] args) {
+        if (args.length == 0) {
+            // Open shop menu
+            player.openInventory(ShopHandler.constructMenu());
+            return;
+        }
+
+        String subCommand = args[0].toLowerCase();
+        
+        switch (subCommand) {
+            case "sell" -> {
+                if (!player.hasPermission("shopping.sell")) {
+                    player.sendMessage(Component.text("You don't have permission to use this command!", NamedTextColor.RED));
+                    return;
+                }
+                handleSell(player, args);
+            }
+            case "remove" -> {
+                if (!player.hasPermission("shopping.remove")) {
+                    player.sendMessage(Component.text("You don't have permission to use this command!", NamedTextColor.RED));
+                    return;
+                }
+                player.openInventory(ShopHandler.constructRemovalMenu(player.getUniqueId()));
+            }
+            default -> {
+                player.sendMessage(Component.text("Usage: /shop [sell|remove] [price]", NamedTextColor.RED));
+            }
+        }
+    }
+
+    private void handleSell(Player player, String[] args) {
+        if (args.length < 2) {
+            player.sendMessage(Component.text("Usage: /shop sell <price>", NamedTextColor.RED));
+            return;
+        }
+
+        int price;
+        try {
+            price = Integer.parseInt(args[1]);
+        } catch (NumberFormatException e) {
+            player.sendMessage(Component.text("Price must be a valid number!", NamedTextColor.RED));
+            return;
+        }
+
         ItemStack heldItem = player.getInventory().getItemInMainHand();
 
         if (heldItem.getType() == Material.AIR || heldItem.getAmount() == 0) {
@@ -69,11 +118,5 @@ public record ShopCommand(Shopping plugin) {
                 .append(Component.text(itemToSell.getAmount() + "x ", NamedTextColor.YELLOW))
                 .append(itemToSell.displayName())
                 .append(Component.text(" for $" + price, NamedTextColor.GREEN)));
-    }
-
-    @Execute(name = "remove")
-    @Permission("shopping.remove")
-    public void remove(@Context Player player) {
-        player.openInventory(ShopHandler.constructRemovalMenu(player.getUniqueId()));
     }
 }

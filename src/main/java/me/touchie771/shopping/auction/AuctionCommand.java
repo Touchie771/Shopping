@@ -1,10 +1,8 @@
 package me.touchie771.shopping.auction;
 
-import dev.rollczi.litecommands.annotations.argument.Arg;
-import dev.rollczi.litecommands.annotations.command.Command;
-import dev.rollczi.litecommands.annotations.context.Context;
-import dev.rollczi.litecommands.annotations.execute.Execute;
-import dev.rollczi.litecommands.annotations.permission.Permission;
+import me.touchie771.minecraftCommands.api.annotations.Command;
+import me.touchie771.minecraftCommands.api.annotations.Execute;
+import me.touchie771.minecraftCommands.api.annotations.Permission;
 import me.touchie771.shopping.Shopping;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
@@ -12,22 +10,102 @@ import net.milkbowl.vault.economy.Economy;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
-import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 
-@Command(name = "auction", aliases = {"auc"})
+@Command(
+    name = "auction",
+    description = "Auction system commands",
+    usage = "/auction [start|bid|list|cancel|claim] [args...]",
+    aliases = {"auc"}
+)
 @Permission("shopping.auction")
-public record AuctionCommand(Shopping plugin) {
+public class AuctionCommand {
 
-    @Execute
-    public void execute(@Context Player player) {
-        player.openInventory(AuctionHandler.constructAuctionMenu());
+    private static Shopping plugin;
+
+    public AuctionCommand() {
+        // Default constructor for library instantiation
     }
 
-    @Execute(name = "start")
-    @Permission("shopping.auction.start")
-    public void start(@Context Player player, @Arg int startingBid, @Arg int durationMinutes) {
+    public static void setPlugin(Shopping pluginInstance) {
+        plugin = pluginInstance;
+    }
+
+    @Execute
+    public void execute(Player player, String[] args) {
+        if (args.length == 0) {
+            // Open auction menu
+            player.openInventory(AuctionHandler.constructAuctionMenu());
+            return;
+        }
+
+        String subCommand = args[0].toLowerCase();
+        
+        switch (subCommand) {
+            case "start" -> {
+                if (!player.hasPermission("shopping.auction.start")) {
+                    player.sendMessage(Component.text("You don't have permission to use this command!", NamedTextColor.RED));
+                    return;
+                }
+                handleStart(player, args);
+            }
+            case "bid" -> {
+                if (!player.hasPermission("shopping.auction.bid")) {
+                    player.sendMessage(Component.text("You don't have permission to use this command!", NamedTextColor.RED));
+                    return;
+                }
+                handleBid(player, args);
+            }
+            case "list" -> {
+                if (!player.hasPermission("shopping.auction.list")) {
+                    player.sendMessage(Component.text("You don't have permission to use this command!", NamedTextColor.RED));
+                    return;
+                }
+                handleList(player);
+            }
+            case "cancel" -> {
+                if (!player.hasPermission("shopping.auction.cancel")) {
+                    player.sendMessage(Component.text("You don't have permission to use this command!", NamedTextColor.RED));
+                    return;
+                }
+                handleCancel(player);
+            }
+            case "claim" -> {
+                if (!player.hasPermission("shopping.auction.claim")) {
+                    player.sendMessage(Component.text("You don't have permission to use this command!", NamedTextColor.RED));
+                    return;
+                }
+                handleClaim(player);
+            }
+            default -> {
+                player.sendMessage(Component.text("Usage: /auction [start|bid|list|cancel|claim] [args...]", NamedTextColor.RED));
+            }
+        }
+    }
+
+    private void handleStart(Player player, String[] args) {
+        if (args.length < 3) {
+            player.sendMessage(Component.text("Usage: /auction start <startingBid> <durationMinutes>", NamedTextColor.RED));
+            return;
+        }
+
+        int startingBid;
+        try {
+            startingBid = Integer.parseInt(args[1]);
+        } catch (NumberFormatException e) {
+            player.sendMessage(Component.text("Starting bid must be a valid number!", NamedTextColor.RED));
+            return;
+        }
+
+        int durationMinutes;
+        try {
+            durationMinutes = Integer.parseInt(args[2]);
+        } catch (NumberFormatException e) {
+            player.sendMessage(Component.text("Duration must be a valid number!", NamedTextColor.RED));
+            return;
+        }
+
         ItemStack heldItem = player.getInventory().getItemInMainHand();
 
         if (heldItem.getType() == Material.AIR || heldItem.getAmount() == 0) {
@@ -91,7 +169,7 @@ public record AuctionCommand(Shopping plugin) {
                 .append(Component.text(" for " + durationMinutes + " minutes", NamedTextColor.GREEN)));
     }
 
-    private static @NotNull Component getFeeMessage(double listingFee, double auctionStartFee) {
+    private static Component getFeeMessage(double listingFee, double auctionStartFee) {
         Component feeMessage = Component.text("Fees charged: ", NamedTextColor.YELLOW);
         if (listingFee > 0) {
             feeMessage = feeMessage.append(Component.text("listing $" + String.format("%.2f", listingFee), NamedTextColor.YELLOW));
@@ -103,9 +181,20 @@ public record AuctionCommand(Shopping plugin) {
         return feeMessage;
     }
 
-    @Execute(name = "bid")
-    @Permission("shopping.auction.bid")
-    public void bid(@Context Player player, @Arg int bidAmount) {
+    private void handleBid(Player player, String[] args) {
+        if (args.length < 2) {
+            player.sendMessage(Component.text("Usage: /auction bid <bidAmount>", NamedTextColor.RED));
+            return;
+        }
+
+        int bidAmount;
+        try {
+            bidAmount = Integer.parseInt(args[1]);
+        } catch (NumberFormatException e) {
+            player.sendMessage(Component.text("Bid amount must be a valid number!", NamedTextColor.RED));
+            return;
+        }
+
         if (bidAmount <= 0) {
             player.sendMessage(Component.text("Bid amount must be greater than 0!", NamedTextColor.RED));
             return;
@@ -115,9 +204,7 @@ public record AuctionCommand(Shopping plugin) {
         player.openInventory(AuctionHandler.constructAuctionMenu());
     }
 
-    @Execute(name = "list")
-    @Permission("shopping.auction.list")
-    public void list(@Context Player player) {
+    private void handleList(Player player) {
         if (AuctionHandler.getActiveAuctions().isEmpty()) {
             player.sendMessage(Component.text("There are no active auctions!", NamedTextColor.YELLOW));
             return;
@@ -134,9 +221,7 @@ public record AuctionCommand(Shopping plugin) {
         }
     }
 
-    @Execute(name = "cancel")
-    @Permission("shopping.auction.cancel")
-    public void cancel(@Context Player player) {
+    private void handleCancel(Player player) {
         var playerAuctions = AuctionHandler.getAuctionsBySeller(player.getUniqueId());
 
         if (playerAuctions.isEmpty()) {
@@ -159,9 +244,7 @@ public record AuctionCommand(Shopping plugin) {
         player.sendMessage(Component.text("Cancelled " + playerAuctions.size() + " auction(s) and returned items!", NamedTextColor.GREEN));
     }
 
-    @Execute(name = "claim")
-    @Permission("shopping.auction.claim")
-    public void claim(@Context Player player) {
+    private void handleClaim(Player player) {
         var pendingItems = plugin.getPendingItems().get(player.getUniqueId());
 
         if (pendingItems == null || pendingItems.isEmpty()) {
